@@ -102,3 +102,26 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+Temp_Ref/Feeder.py
+Temp_Ref/Hyper_Parameters.json
+Temp_Ref/Inference_Wav_Path_in_Train.txt
+Temp_Ref/Model.py
+Temp_Ref/Modules.py
+Temp_Ref/Pattern_Generator.py
+Temp_Ref/Token_Index_Dict.json
+Bak/Attention_Modules.py
+Bak/Audio.py
+Bak/Feeder.py
+Bak/Hyper_Parameters.json
+Bak/Inference_Wav_Path_in_Train.txt
+Bak/LICENSE
+Bak/Model.py
+Bak/Modules.py
+Bak/Pattern_Generator.py
+Bak/README.md
+Bak/temp.py
+Bak/Token_Index_Dict.json
+Test/Ingu.wav
+Test/p225_023.wav
+.vscode/settings.json
+temp.py

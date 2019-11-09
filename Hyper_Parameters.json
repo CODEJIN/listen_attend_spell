@@ -1,0 +1,46 @@
+{
+    "Sound": {
+        "Spectrogram_Dim": 1025,
+        "Mel_Dim": 80,
+        "Frame_Length": 20,
+        "Frame_Shift": 10,
+        "Sample_Rate": 16000,
+        "Max_Abs_Mel": 4
+    },
+
+    "Token_JSON_Path": "Token_Index_Dict.json",
+
+    "Listener": {
+        "Uni_Direction_Cell_Size": [256, 256, 256],
+        "Zoneout_Rate": 0.0
+    },
+
+    "Speller": {
+        "Use_Transformer": true,
+        "Attention_Size": 128,
+        "Embedding_Size": 128,
+        "Cell_Size": [256, 256],
+        "Max_Length": 250
+    },
+
+    "Train": {
+        "Pattern_Path": "D:/LAS.Pattern",
+        "Metadata_File": "METADATA.PICKLE",
+        "Batch_Size": 4,
+        "Pattern_Sorting": true,
+        "Min_Wav_Length": 500,
+        "Max_Wav_Length": 10000,
+        "Max_Pattern_Queue": 20,
+        "Learning_Rate": 1e-4,
+        "ADAM": {
+            "Beta1": 0.9,
+            "Beta2": 0.999,
+            "Epsilon": 1e-6
+        },
+        "Inference_Timing": 10000,
+        "Checkpoint_Save_Timing": 10000
+    },    
+
+    "Inference_Path": "E:/LAS/Inference",
+    "Checkpoint_Path": "E:/LAS/Checkpoint"
+}

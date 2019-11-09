@@ -1,0 +1,2 @@
+./Test/p225_023.wav
+./Test/Ingu.wav
