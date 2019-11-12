@@ -73,15 +73,15 @@ class LAS:
 
 
     # Don't use @tf.function here. it makes slower.
-    @tf.function(
-    input_signature=[
-        tf.TensorSpec(shape=[None, None, hp_Dict['Sound']['Mel_Dim']], dtype=tf.float32),
-        tf.TensorSpec(shape=[None,], dtype=tf.int32),
-        tf.TensorSpec(shape=[None, 1], dtype=tf.int32)
-        ],
-    autograph= True,
-    experimental_relax_shapes= True
-    )
+    # @tf.function(
+    # input_signature=[
+    #     tf.TensorSpec(shape=[None, None, hp_Dict['Sound']['Mel_Dim']], dtype=tf.float32),
+    #     tf.TensorSpec(shape=[None,], dtype=tf.int32),
+    #     tf.TensorSpec(shape=[None, 1], dtype=tf.int32)
+    #     ],
+    # autograph= True,
+    # experimental_relax_shapes= True
+    # )
     def Inference_Step(self, mels, mel_lengths, initial_tokens):
         tokens = tf.zeros(shape=[tf.shape(mels)[0], 0], dtype= tf.int32)
         for _ in range(hp_Dict['Speller']['Max_Length']):

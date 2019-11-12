@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as numpy
 import json
 
-from Attention_Modules import Transformer, BahdanauAttention, BahdanauAttention2
+from Attention_Modules import Transformer, BahdanauAttention
 
 with open('Hyper_Parameters.json', 'r') as f:
     hp_Dict = json.load(f)
@@ -15,7 +15,7 @@ class Listner(tf.keras.Model):
 
         self.layer_Dict = {}
         for rnn_Index, cell_Size in enumerate(hp_Dict['Listener']['Uni_Direction_Cell_Size']):        
-            self.layer_Dict['Layer{}'.format(rnn_Index)] = tf.keras.layers.Bidirectional(
+            self.layer_Dict['RNN_{}'.format(rnn_Index)] = tf.keras.layers.Bidirectional(
                 tf.keras.layers.LSTM(
                     units= cell_Size,
                     return_sequences= True
@@ -25,7 +25,7 @@ class Listner(tf.keras.Model):
     def call(self, inputs):
         new_Tensor = inputs
         for rnn_Index, _ in enumerate(hp_Dict['Listener']['Uni_Direction_Cell_Size']):            
-            new_Tensor = self.layer_Dict['Layer{}'.format(rnn_Index)](new_Tensor)
+            new_Tensor = self.layer_Dict['RNN_{}'.format(rnn_Index)](new_Tensor)
             if rnn_Index < len(hp_Dict['Listener']['Uni_Direction_Cell_Size']) - 1:
                 new_Tensor = self.reshape(new_Tensor)
 
@@ -45,28 +45,15 @@ class Listner(tf.keras.Model):
 
         return tf.reshape(inputs, [batch_Size, time_Step // 2, dimension * 2])
 
-class Embedding(tf.keras.layers.Layer):
-    def __init__(self):
-        super(Embedding, self).__init__(name= '')
-
-        self.embedding_Variable = tf.Variable(
-            tf.random.uniform(shape= (
-                len(token_Index_Dict),
-                hp_Dict['Speller']['Embedding_Size']
-                )),
-            name='embedding_v',
-            dtype= tf.float32
-            )
-
-    def call(self, inputs):
-        return tf.nn.embedding_lookup(self.embedding_Variable, inputs)
-
 class Speller(tf.keras.Model):
     def __init__(self):
         super(Speller, self).__init__(name= '')
 
         self.layer_Dict = {}
-        self.layer_Dict['Embedding'] = Embedding()
+        self.layer_Dict['Embedding'] = tf.keras.layers.Embedding(
+            input_dim= len(token_Index_Dict),
+            output_dim= hp_Dict['Speller']['Embedding_Size']
+            )
         self.layer_Dict['Attention'] = Transformer(size= hp_Dict['Speller']['Attention_Size']) if hp_Dict['Speller']['Use_Transformer'] else BahdanauAttention(size= hp_Dict['Speller']['Attention_Size'])        
         for rnn_Index, cell_Size in enumerate(hp_Dict['Speller']['Cell_Size']):
             self.layer_Dict['RNN_{}'.format(rnn_Index)] = tf.keras.layers.LSTM(
@@ -101,7 +88,7 @@ class Speller(tf.keras.Model):
         attention_Tensor, history_Tensor = self.layer_Dict['Attention'](inputs= [query_Tensor, value_Tensor])
         new_Tensor = tf.concat([query_Tensor, attention_Tensor], axis= -1)
         for rnn_Index, _ in enumerate(hp_Dict['Speller']['Cell_Size']):
-            new_Tensor = self.layer_Dict['RNN_{}'.format(rnn_Index)](new_Tensor)        
+            new_Tensor = self.layer_Dict['RNN_{}'.format(rnn_Index)](new_Tensor)
         new_Tensor = self.layer_Dict['Projection'](new_Tensor)
 
         return new_Tensor, history_Tensor

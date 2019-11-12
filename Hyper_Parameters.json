@@ -26,7 +26,7 @@
     "Train": {
         "Pattern_Path": "D:/LAS.Pattern",
         "Metadata_File": "METADATA.PICKLE",
-        "Batch_Size": 4,
+        "Batch_Size": 32,
         "Pattern_Sorting": true,
         "Min_Wav_Length": 500,
         "Max_Wav_Length": 10000,
@@ -39,7 +39,7 @@
         },
         "Inference_Timing": 10000,
         "Checkpoint_Save_Timing": 10000
-    },    
+    },
 
     "Inference_Path": "E:/LAS/Inference",
     "Checkpoint_Path": "E:/LAS/Checkpoint"
