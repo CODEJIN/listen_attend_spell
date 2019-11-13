@@ -6,6 +6,7 @@ Chan, W., Jaitly, N., Le, Q., & Vinyals, O. (2016, March). Listen, attend and sp
 ```
 
 # Structure
+<img src='./Figures/Structure.png' width= 50% height=50%>
 
 # Used dataset
 I used speech files with a length between 0.5s and 10.0s in the following datasets. Length can be modified in 'Hyper_Parameters.json'
@@ -84,3 +85,8 @@ The model stops learning only when you force stop (e.g. Ctrl + C).
 # Trained checkpoint file
 
 # Future works
+
+* Find out why the attention formation failed
+    * Problem candidate 1: Insufficiency of model training epochs or patterns
+    * Problem candidate 2: Bug in code
+    * Problem candidate 3: TF 2.0 attention layers(tf.keras.layers.Attention | tf.keras.layers.AdditiveAttention) problem
