@@ -44,7 +44,8 @@ class Transformer(tf.keras.layers.Attention):
             # Mask of shape [batch_size, Tq, 1].
             q_mask = tf.expand_dims(q_mask, axis=-1)
             result *= tf.cast(q_mask, dtype=result.dtype)
-        return result, attention_distribution
+
+        return result, attention_distribution#tf.reverse(attention_distribution, axis= [-1])
 
 class BahdanauAttention(tf.keras.layers.AdditiveAttention):
     '''
@@ -90,7 +91,8 @@ class BahdanauAttention(tf.keras.layers.AdditiveAttention):
             # Mask of shape [batch_size, Tq, 1].
             q_mask = tf.expand_dims(q_mask, axis=-1)
             result *= tf.cast(q_mask, dtype=result.dtype)
-        return result, attention_distribution
+        
+        return result, attention_distribution#tf.reverse(attention_distribution, axis= [-1])
 
 def _apply_scores(scores, value, scores_mask=None):
     if scores_mask is not None:

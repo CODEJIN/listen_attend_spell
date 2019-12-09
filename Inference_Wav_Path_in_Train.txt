@@ -1,2 +1,2 @@
 ./Test/p225_023.wav
-./Test/Ingu.wav
+./Test/SI2005.WAV

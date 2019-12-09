@@ -24,9 +24,9 @@
     },
 
     "Train": {
-        "Pattern_Path": "D:/LAS.Pattern",
+        "Pattern_Path": "../../Pattern/LAS.Pattern",
         "Metadata_File": "METADATA.PICKLE",
-        "Batch_Size": 32,
+        "Batch_Size": 16,
         "Pattern_Sorting": true,
         "Min_Wav_Length": 500,
         "Max_Wav_Length": 10000,
@@ -37,10 +37,10 @@
             "Beta2": 0.999,
             "Epsilon": 1e-6
         },
-        "Inference_Timing": 10000,
-        "Checkpoint_Save_Timing": 10000
+        "Inference_Timing": 1000,
+        "Checkpoint_Save_Timing": 1000
     },
 
-    "Inference_Path": "E:/LAS/Inference",
-    "Checkpoint_Path": "E:/LAS/Checkpoint"
+    "Inference_Path": "../../Results/LAS/Inference",
+    "Checkpoint_Path": "../../Results/LAS/Checkpoint"
 }

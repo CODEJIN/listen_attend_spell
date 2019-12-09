@@ -19,21 +19,42 @@ class LAS:
         self.Model_Generate()
 
     def Model_Generate(self):
-        self.layer_Dict = {}
-        self.layer_Dict['Mel'] = tf.keras.layers.Input(shape=[None, hp_Dict['Sound']['Mel_Dim']], dtype= tf.float32)
-        self.layer_Dict['Mel_Length'] = tf.keras.layers.Input(shape=[], dtype= tf.int32)
-        self.layer_Dict['Token'] = tf.keras.layers.Input(shape=[None,], dtype= tf.int32)        
-        self.layer_Dict['Listener'] = Modules.Listner()(self.layer_Dict['Mel'])
-        self.layer_Dict['Speller'], self.layer_Dict['Attention'] = Modules.Speller()([
-            self.layer_Dict['Token'],
-            self.layer_Dict['Listener'],
-            self.layer_Dict['Mel_Length']
+        layer_Dict = {}
+        layer_Dict['Mel'] = tf.keras.layers.Input(shape=[None, hp_Dict['Sound']['Mel_Dim']], dtype= tf.float32)
+        layer_Dict['Mel_Length'] = tf.keras.layers.Input(shape=[], dtype= tf.int32)
+        layer_Dict['Token'] = tf.keras.layers.Input(shape=[None,], dtype= tf.int32)        
+        layer_Dict['Inference_Listener'] = tf.keras.layers.Input(shape=[None, hp_Dict['Listener']['Uni_Direction_Cell_Size'][-1] * 2], dtype= tf.float32)
+        layer_Dict['Listener'] = Modules.Listner()(layer_Dict['Mel'])
+
+        layer_Dict['Speller'] = Modules.Speller()
+        layer_Dict['Train', 'Speller'], _ = layer_Dict['Speller']([
+            layer_Dict['Token'],
+            layer_Dict['Listener'],
+            layer_Dict['Mel_Length']
             ])
-        self.model = tf.keras.Model(
-            inputs=[self.layer_Dict['Mel'], self.layer_Dict['Mel_Length'], self.layer_Dict['Token']],
-            outputs= [self.layer_Dict['Speller'], self.layer_Dict['Attention']]
-            )
-        self.model.summary()
+        layer_Dict['Inference', 'Speller'], layer_Dict['Inference', 'Attention'] = layer_Dict['Speller']([
+            layer_Dict['Token'],
+            layer_Dict['Inference_Listener'],
+            layer_Dict['Mel_Length']
+            ])
+
+        self.model_Dict = {
+            'Train': tf.keras.Model(
+                inputs=[layer_Dict['Mel'], layer_Dict['Mel_Length'], layer_Dict['Token']],
+                outputs= layer_Dict['Train', 'Speller']
+                ),
+            ('Inference', 'Listener'): tf.keras.Model(  #Encoder의 반복적 계산을 막기 위함
+                inputs= layer_Dict['Mel'],
+                outputs= layer_Dict['Listener']
+                ),            
+            ('Inference', 'Speller'): tf.keras.Model(
+                inputs= [layer_Dict['Inference_Listener'], layer_Dict['Mel_Length'], layer_Dict['Token']],
+                outputs= [layer_Dict['Inference', 'Speller'], layer_Dict['Inference', 'Attention']]
+                ),            
+            }
+        self.model_Dict['Train'].summary()
+        self.model_Dict['Inference', 'Listener'].summary()
+        self.model_Dict['Inference', 'Speller'].summary()
 
         #optimizer는 @tf.function의 밖에 있어야 함
         self.optimizer = tf.keras.optimizers.Adam(
@@ -50,12 +71,12 @@ class LAS:
             tf.TensorSpec(shape=[None, None], dtype=tf.int32),
             tf.TensorSpec(shape=[None,], dtype=tf.int32)
             ],
-        autograph= False,
+        autograph= True,
         experimental_relax_shapes= True
         )
     def Train_Step(self, mels, mel_lengths, tokens, token_lengths):
         with tf.GradientTape() as tape:
-            logits, _ = self.model(inputs= [mels, mel_lengths, tokens[:, :-1]], training= True)
+            logits = self.model_Dict['Train'](inputs= [mels, mel_lengths, tokens[:, :-1]], training= True)
             loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 labels= tokens[:, 1:],
                 logits= logits
@@ -66,27 +87,21 @@ class LAS:
                 dtype= tf.float32
                 )
             loss = tf.reduce_mean(loss)
-        gradients = tape.gradient(loss, self.model.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
+        gradients = tape.gradient(loss, self.model_Dict['Train'].trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.model_Dict['Train'].trainable_variables))
 
         return loss
 
+    # @tf.function
+    def Inference_Listener_Step(self, mels):
+        return self.model_Dict['Inference', 'Listener'](inputs= mels, training= False)
 
     # Don't use @tf.function here. it makes slower.
-    # @tf.function(
-    # input_signature=[
-    #     tf.TensorSpec(shape=[None, None, hp_Dict['Sound']['Mel_Dim']], dtype=tf.float32),
-    #     tf.TensorSpec(shape=[None,], dtype=tf.int32),
-    #     tf.TensorSpec(shape=[None, 1], dtype=tf.int32)
-    #     ],
-    # autograph= True,
-    # experimental_relax_shapes= True
-    # )
-    def Inference_Step(self, mels, mel_lengths, initial_tokens):
-        tokens = tf.zeros(shape=[tf.shape(mels)[0], 0], dtype= tf.int32)
+    def Inference_Speller_Step(self, listeners, mel_lengths, initial_tokens):
+        tokens = tf.zeros(shape=[tf.shape(listeners)[0], 0], dtype= tf.int32)
         for _ in range(hp_Dict['Speller']['Max_Length']):
             tokens = tf.concat([initial_tokens, tokens], axis=-1)
-            logits, attention_History = self.model(inputs= [mels, mel_lengths, tokens], training= False)
+            logits, attention_History = self.model_Dict['Inference', 'Speller'](inputs= [listeners, mel_lengths, tokens], training= False)
             tokens = tf.argmax(logits, axis=-1, output_type= tf.int32)
 
         return tokens, attention_History
@@ -98,7 +113,7 @@ class LAS:
             print('There is no checkpoint.')
             return
 
-        self.model.load_weights(checkpoint_File_Path)
+        self.model_Dict['Train'].load_weights(checkpoint_File_Path)
         print('Checkpoint \'{}\' is loaded.'.format(checkpoint_File_Path))
 
     def Train(self):
@@ -126,7 +141,7 @@ class LAS:
 
             if step % hp_Dict['Train']['Checkpoint_Save_Timing'] == 0:
                 os.makedirs(os.path.join(hp_Dict['Checkpoint_Path']).replace("\\", "/"), exist_ok= True)
-                self.model.save_weights(os.path.join(hp_Dict['Checkpoint_Path'], 'CHECKPOINT.H5').replace('\\', '/'))
+                self.model_Dict['Train'].save_weights(os.path.join(hp_Dict['Checkpoint_Path'], 'CHECKPOINT.H5').replace('\\', '/'))
             
             if step % hp_Dict['Train']['Inference_Timing'] == 0:
                 Run_Inference()
@@ -135,7 +150,13 @@ class LAS:
         print('Inference running...')
         inference_Pattern = self.feeder.Get_Inference_Pattern(wav_Path_List)
 
-        tokens, attention_History = self.Inference_Step(**inference_Pattern)
+        listeners = self.Inference_Listener_Step(mels= inference_Pattern['mels'])
+
+        tokens, attention_History = self.Inference_Speller_Step(
+            listeners= listeners,
+            mel_lengths= inference_Pattern['mel_lengths'],
+            initial_tokens=inference_Pattern['initial_tokens']
+            )
 
         export_Inference_Thread = Thread(
             target= self.Export_Inference,

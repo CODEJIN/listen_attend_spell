@@ -79,14 +79,13 @@ The model stops learning only when you force stop (e.g. Ctrl + C).
 
 # Result
 
-* This result is with uploaded hyper parameters.
+* This result is based on uploaded hyper parameters.
+* Insufficient results
+    * Insufficient pattern is suspected the main cause
+    * Deciding that the model configuration was normal, so the project stopped at this point.
 
+* Trained pattern  
+<img src='./Figures/20191209.104407.IDX_0.PNG' width= 50% height=50%>
 
-# Trained checkpoint file
-
-# Future works
-
-* Find out why the attention formation failed
-    * Problem candidate 1: Insufficiency of model training epochs or patterns
-    * Problem candidate 2: Bug in code
-    * Problem candidate 3: TF 2.0 attention layers(tf.keras.layers.Attention | tf.keras.layers.AdditiveAttention) problem
+* Untrained pattern  
+<img src='./Figures/20191209.104407.IDX_1.PNG' width= 50% height=50%>

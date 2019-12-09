@@ -54,12 +54,15 @@ class Speller(tf.keras.Model):
             input_dim= len(token_Index_Dict),
             output_dim= hp_Dict['Speller']['Embedding_Size']
             )
-        self.layer_Dict['Attention'] = Transformer(size= hp_Dict['Speller']['Attention_Size']) if hp_Dict['Speller']['Use_Transformer'] else BahdanauAttention(size= hp_Dict['Speller']['Attention_Size'])        
+
         for rnn_Index, cell_Size in enumerate(hp_Dict['Speller']['Cell_Size']):
             self.layer_Dict['RNN_{}'.format(rnn_Index)] = tf.keras.layers.LSTM(
                 units= cell_Size,
                 return_sequences= True
                 )
+
+        self.layer_Dict['Attention'] = Transformer(size= hp_Dict['Speller']['Attention_Size']) if hp_Dict['Speller']['Use_Transformer'] else BahdanauAttention(size= hp_Dict['Speller']['Attention_Size'])
+        
         self.layer_Dict['Projection'] = tf.keras.layers.Dense(
             units= len(token_Index_Dict),
             use_bias= True,
@@ -78,17 +81,18 @@ class Speller(tf.keras.Model):
         https://wikidocs.net/22893
         '''
         token_Tensor, value_Tensor, _ = inputs        
-        query_Tensor = self.layer_Dict['Embedding'](token_Tensor)
+        new_Tensor = self.layer_Dict['Embedding'](token_Tensor)
 
         # mel_length_Tensor += mel_length_Tensor % 2  #Making even value
         # value_Length_Tensor = mel_length_Tensor // tf.pow(2, len(hp_Dict['Listener']['Uni_Direction_Cell_Size']) - 1)   #encoder tensor length
         # value_Mask_Tensor = tf.sequence_mask(value_Length_Tensor, tf.shape(value_Tensor)[1])        
         #attention_Tensor, history_Tensor = self.layer_Dict['Attention'](inputs= [query_Tensor, value_Tensor], mask=[False, value_Mask_Tensor])
         
-        attention_Tensor, history_Tensor = self.layer_Dict['Attention'](inputs= [query_Tensor, value_Tensor])
-        new_Tensor = tf.concat([query_Tensor, attention_Tensor], axis= -1)
         for rnn_Index, _ in enumerate(hp_Dict['Speller']['Cell_Size']):
             new_Tensor = self.layer_Dict['RNN_{}'.format(rnn_Index)](new_Tensor)
+
+        attention_Tensor, history_Tensor = self.layer_Dict['Attention'](inputs= [new_Tensor, value_Tensor])
+        new_Tensor = tf.concat([new_Tensor, attention_Tensor], axis= -1)        
         new_Tensor = self.layer_Dict['Projection'](new_Tensor)
 
         return new_Tensor, history_Tensor
